@@ -8,10 +8,10 @@
 #include <mutex>
 #include <chrono>
 #include <algorithm>
+#include <iomanip>
 
 using Clause = std::set<int>;
 using ClauseSet = std::set<Clause>;
-
 std::mutex resolvent_mutex;
 using Clock = std::chrono::high_resolution_clock;
 
@@ -52,7 +52,6 @@ bool resolve(const Clause &c1, const Clause &c2, Clause &resolvent) {
 // Threaded clause resolver
 void resolve_worker(const std::vector<Clause> &clauses, size_t start, size_t end, ClauseSet &local_new_clauses, const ClauseSet &global_clauses) {
     Clause resolvent;
-
     for (size_t i = start; i < end; ++i) {
         for (size_t j = i + 1; j < clauses.size(); ++j) {
             if (resolve(clauses[i], clauses[j], resolvent)) {
@@ -70,8 +69,8 @@ void resolve_worker(const std::vector<Clause> &clauses, size_t start, size_t end
     }
 }
 
-// Multithreaded resolution solver with detailed timing
-bool resolution_solver(ClauseSet clauses, int num_threads, long long &solving_time_ms) {
+// Multithreaded resolution solver with float-based timing
+bool resolution_solver(ClauseSet clauses, int num_threads, double &solving_time_ms) {
     ClauseSet new_clauses;
     auto start_time = Clock::now();
 
@@ -96,7 +95,7 @@ bool resolution_solver(ClauseSet clauses, int num_threads, long long &solving_ti
         for (const auto &local : local_new_clauses) {
             for (const auto &cl : local) {
                 if (cl.empty()) {
-                    solving_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
+                    solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start_time).count();
                     std::cout << "Derived empty clause. UNSAT.\n";
                     return false;
                 }
@@ -107,7 +106,7 @@ bool resolution_solver(ClauseSet clauses, int num_threads, long long &solving_ti
         }
 
         if (new_clauses.empty()) {
-            solving_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
+            solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start_time).count();
             std::cout << "No new clauses. SAT.\n";
             return true;
         }
@@ -135,14 +134,15 @@ int main(int argc, char *argv[]) {
     auto parse_start = Clock::now();
     ClauseSet clauses = parse_dimacs(argv[1]);
     auto parse_end = Clock::now();
-    long long parsing_time = std::chrono::duration_cast<std::chrono::milliseconds>(parse_end - parse_start).count();
+    double parsing_time = std::chrono::duration<double, std::milli>(parse_end - parse_start).count();
 
-    long long solving_time = 0;
+    double solving_time = 0;
     bool result = resolution_solver(clauses, num_threads, solving_time);
 
     auto total_end = Clock::now();
-    long long total_time = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start).count();
+    double total_time = std::chrono::duration<double, std::milli>(total_end - total_start).count();
 
+    std::cout << std::fixed << std::setprecision(3);
     std::cout << "Result: " << (result ? "SAT" : "UNSAT") << "\n";
     std::cout << "Timing Breakdown:\n";
     std::cout << "  Parsing Time: " << parsing_time << " ms\n";
