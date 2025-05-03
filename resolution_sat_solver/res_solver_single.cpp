@@ -86,7 +86,7 @@ bool resolution_solver(ClauseSet clauses, double &solving_time_ms) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: ./sat_solver <file.cnf>\n";
+        std::cerr << "Usage: ./res_solver_single <file.cnf>\n";
         return 1;
     }
 

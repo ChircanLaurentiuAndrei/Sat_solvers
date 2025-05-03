@@ -120,7 +120,7 @@ bool resolution_solver(ClauseSet clauses, int num_threads, double &solving_time_
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: ./sat_solver_mt <file.cnf> [threads]\n";
+        std::cerr << "Usage: ./res_solver_multi <file.cnf> [threads]\n";
         return 1;
     }
 
