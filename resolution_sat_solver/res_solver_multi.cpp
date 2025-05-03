@@ -15,7 +15,7 @@ using ClauseSet = std::set<Clause>;
 std::mutex resolvent_mutex;
 using Clock = std::chrono::high_resolution_clock;
 
-// Parse DIMACS CNF file
+
 ClauseSet parse_dimacs(const std::string &filename) {
     std::ifstream infile(filename);
     std::string line;
@@ -36,7 +36,7 @@ ClauseSet parse_dimacs(const std::string &filename) {
     return clauses;
 }
 
-// Try to resolve two clauses. Returns true and sets `resolvent` if resolvable.
+
 bool resolve(const Clause &c1, const Clause &c2, Clause &resolvent) {
     for (int lit : c1) {
         if (c2.count(-lit)) {
@@ -49,7 +49,7 @@ bool resolve(const Clause &c1, const Clause &c2, Clause &resolvent) {
     return false;
 }
 
-// Threaded clause resolver
+
 void resolve_worker(const std::vector<Clause> &clauses, size_t start, size_t end, ClauseSet &local_new_clauses, const ClauseSet &global_clauses) {
     Clause resolvent;
     for (size_t i = start; i < end; ++i) {
@@ -58,7 +58,7 @@ void resolve_worker(const std::vector<Clause> &clauses, size_t start, size_t end
                 if (resolvent.empty()) {
                     std::lock_guard<std::mutex> lock(resolvent_mutex);
                     local_new_clauses.insert(resolvent);
-                    return; // Empty clause => UNSAT
+                    return; // 
                 }
                 if (global_clauses.count(resolvent) == 0 && local_new_clauses.count(resolvent) == 0) {
                     std::lock_guard<std::mutex> lock(resolvent_mutex);
@@ -69,7 +69,7 @@ void resolve_worker(const std::vector<Clause> &clauses, size_t start, size_t end
     }
 }
 
-// Multithreaded resolution solver with float-based timing
+
 bool resolution_solver(ClauseSet clauses, int num_threads, double &solving_time_ms) {
     ClauseSet new_clauses;
     auto start_time = Clock::now();

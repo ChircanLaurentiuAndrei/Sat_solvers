@@ -11,7 +11,6 @@ using Clause = std::set<int>;
 using ClauseSet = std::set<Clause>;
 using Clock = std::chrono::high_resolution_clock;
 
-// Parse DIMACS CNF file
 ClauseSet parse_dimacs(const std::string &filename) {
     std::ifstream infile(filename);
     std::string line;
@@ -32,7 +31,6 @@ ClauseSet parse_dimacs(const std::string &filename) {
     return clauses;
 }
 
-// Try to resolve two clauses. Returns true and sets `resolvent` if resolvable.
 bool resolve(const Clause &c1, const Clause &c2, Clause &resolvent) {
     for (int lit : c1) {
         if (c2.count(-lit)) {
@@ -45,7 +43,7 @@ bool resolve(const Clause &c1, const Clause &c2, Clause &resolvent) {
     return false;
 }
 
-// Single-threaded resolution algorithm with float-based timing
+
 bool resolution_solver(ClauseSet clauses, double &solving_time_ms) {
     ClauseSet new_clauses;
     auto start_time = Clock::now();
