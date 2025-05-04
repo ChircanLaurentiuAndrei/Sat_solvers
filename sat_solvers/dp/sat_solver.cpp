@@ -6,16 +6,13 @@
 #include <string>
 #include <chrono>
 #include <iomanip>
-#include <thread>
-#include <mutex>
 #include <algorithm>
 
 using Clause = std::set<int>;
 using ClauseSet = std::set<Clause>;
 using Clock = std::chrono::high_resolution_clock;
-std::mutex resolvent_mutex;
 
-
+// Parse DIMACS CNF file
 ClauseSet parse_dimacs(const std::string &filename) {
     std::ifstream infile(filename);
     std::string line;
@@ -36,7 +33,7 @@ ClauseSet parse_dimacs(const std::string &filename) {
     return clauses;
 }
 
-
+// Apply unit propagation
 bool unit_propagate(ClauseSet &clauses) {
     bool changed = true;
     while (changed) {
@@ -67,26 +64,8 @@ bool unit_propagate(ClauseSet &clauses) {
     return true;
 }
 
-
-void resolve_worker(const std::vector<Clause> &pos, const std::vector<Clause> &neg,
-                    size_t start, size_t end, ClauseSet &local_resolvents, bool &found_empty) {
-    for (size_t i = start; i < end && !found_empty; ++i) {
-        for (size_t j = 0; j < neg.size(); ++j) {
-            Clause resolvent;
-            for (int l : pos[i]) if (l != *pos[i].begin()) resolvent.insert(l);
-            for (int l : neg[j]) if (l != -*pos[i].begin()) resolvent.insert(l);
-            if (resolvent.empty()) {
-                found_empty = true;
-                return;
-            }
-            std::lock_guard<std::mutex> lock(resolvent_mutex);
-            local_resolvents.insert(resolvent);
-        }
-    }
-}
-
-
-bool dp_solver_mt(ClauseSet clauses, int num_threads, double &solving_time_ms) {
+// DP solver (eliminates variables)
+bool dp_solver(ClauseSet clauses, double &solving_time_ms) {
     auto start = Clock::now();
 
     if (!unit_propagate(clauses)) {
@@ -95,37 +74,28 @@ bool dp_solver_mt(ClauseSet clauses, int num_threads, double &solving_time_ms) {
     }
 
     while (!clauses.empty()) {
+        // Select the first literal from the first clause
         int chosen_var = *clauses.begin()->begin();
 
-        ClauseSet pos_set, neg_set, rest;
+        ClauseSet pos, neg, rest;
         for (const auto &clause : clauses) {
-            if (clause.count(chosen_var)) pos_set.insert(clause);
-            else if (clause.count(-chosen_var)) neg_set.insert(clause);
+            if (clause.count(chosen_var)) pos.insert(clause);
+            else if (clause.count(-chosen_var)) neg.insert(clause);
             else rest.insert(clause);
         }
 
-        std::vector<Clause> pos(pos_set.begin(), pos_set.end());
-        std::vector<Clause> neg(neg_set.begin(), neg_set.end());
-
         ClauseSet resolvents;
-        std::vector<std::thread> threads;
-        bool found_empty = false;
-
-        size_t chunk_size = pos.size() / num_threads + 1;
-
-        for (int t = 0; t < num_threads; ++t) {
-            size_t start_i = t * chunk_size;
-            size_t end_i = std::min(start_i + chunk_size, pos.size());
-
-            threads.emplace_back(resolve_worker, std::cref(pos), std::cref(neg),
-                                 start_i, end_i, std::ref(resolvents), std::ref(found_empty));
-        }
-
-        for (auto &th : threads) th.join();
-
-        if (found_empty) {
-            solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
-            return false;
+        for (const auto &c1 : pos) {
+            for (const auto &c2 : neg) {
+                Clause resolvent;
+                for (int l : c1) if (l != chosen_var) resolvent.insert(l);
+                for (int l : c2) if (l != -chosen_var) resolvent.insert(l);
+                if (resolvent.empty()) {
+                    solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+                    return false;
+                }
+                resolvents.insert(resolvent);
+            }
         }
 
         clauses = rest;
@@ -143,13 +113,8 @@ bool dp_solver_mt(ClauseSet clauses, int num_threads, double &solving_time_ms) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: ./dp_sat_solver <file.cnf> [threads]\n";
+        std::cerr << "Usage: ./sat_solver <file.cnf>\n";
         return 1;
-    }
-
-    int num_threads = std::thread::hardware_concurrency();
-    if (argc >= 3) {
-        num_threads = std::stoi(argv[2]);
     }
 
     auto total_start = Clock::now();
@@ -160,7 +125,7 @@ int main(int argc, char *argv[]) {
     double parsing_time = std::chrono::duration<double, std::milli>(parse_end - parse_start).count();
 
     double solving_time = 0;
-    bool result = dp_solver_mt(clauses, num_threads, solving_time);
+    bool result = dp_solver(clauses, solving_time);
 
     auto total_end = Clock::now();
     double total_time = std::chrono::duration<double, std::milli>(total_end - total_start).count();
