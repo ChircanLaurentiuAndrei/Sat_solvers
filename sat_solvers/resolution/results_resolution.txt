@@ -1,0 +1,4 @@
+3.cnf: SAT in 0.188 ms
+4.cnf: UNSAT in 0.675 ms
+5.cnf: SAT in 0.776 ms
+6.cnf: SAT in 53.200 ms

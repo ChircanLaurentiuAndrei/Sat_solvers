@@ -1,141 +1,114 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <set>
 #include <vector>
 #include <string>
+#include <set>
+#include <unordered_map>
 #include <chrono>
+#include <filesystem>
 #include <iomanip>
-#include <algorithm>
 
-using Clause = std::set<int>;
-using ClauseSet = std::set<Clause>;
-using Clock = std::chrono::high_resolution_clock;
+namespace fs = std::filesystem;
+using namespace std;
 
-// Parse DIMACS CNF file
-ClauseSet parse_dimacs(const std::string &filename) {
-    std::ifstream infile(filename);
-    std::string line;
-    ClauseSet clauses;
+using Clause = vector<int>;
+using CNF = vector<Clause>;
 
-    while (getline(infile, line)) {
-        if (line.empty() || line[0] == 'c' || line[0] == 'p') continue;
+CNF parse_cnf(const string &filename, int &num_vars) {
+    ifstream file(filename);
+    string line;
+    CNF formula;
 
-        std::istringstream iss(line);
-        int lit;
-        Clause clause;
-        while (iss >> lit && lit != 0) {
-            clause.insert(lit);
+    while (getline(file, line)) {
+        if (line.empty() || line[0] == 'c') continue;
+        if (line[0] == 'p') {
+            istringstream iss(line);
+            string tmp;
+            int num_clauses;
+            iss >> tmp >> tmp >> num_vars >> num_clauses;
+        } else {
+            istringstream iss(line);
+            int lit;
+            Clause clause;
+            while (iss >> lit && lit != 0) clause.push_back(lit);
+            formula.push_back(clause);
         }
-        if (!clause.empty())
-            clauses.insert(clause);
     }
-    return clauses;
+    return formula;
 }
 
-// Apply unit propagation
-bool unit_propagate(ClauseSet &clauses) {
-    bool changed = true;
-    while (changed) {
-        changed = false;
-        for (const auto &clause : clauses) {
-            if (clause.size() == 1) {
-                int unit = *clause.begin();
-                ClauseSet new_clauses;
+bool contains_empty_clause(const CNF &cnf) {
+    for (const auto &clause : cnf) {
+        if (clause.empty()) return true;
+    }
+    return false;
+}
 
-                for (const auto &c : clauses) {
-                    if (c.count(unit)) continue;
-                    if (c.count(-unit)) {
-                        Clause new_c = c;
-                        new_c.erase(-unit);
-                        if (new_c.empty()) return false;
-                        new_clauses.insert(new_c);
-                    } else {
-                        new_clauses.insert(c);
-                    }
-                }
+bool dp_algorithm(CNF cnf, int num_vars) {
+    for (int var = 1; var <= num_vars; ++var) {
+        CNF pos_clauses, neg_clauses, others;
 
-                clauses = std::move(new_clauses);
-                changed = true;
-                break;
+        for (auto &clause : cnf) {
+            bool has_pos = false, has_neg = false;
+            Clause reduced;
+            for (int lit : clause) {
+                if (lit == var) has_pos = true;
+                else if (lit == -var) has_neg = true;
+                else reduced.push_back(lit);
+            }
+            if (has_pos && has_neg) continue;
+            if (has_pos) pos_clauses.push_back(reduced);
+            else if (has_neg) neg_clauses.push_back(reduced);
+            else others.push_back(clause);
+        }
+
+        CNF resolvents;
+        for (auto &c1 : pos_clauses) {
+            for (auto &c2 : neg_clauses) {
+                set<int> lits(c1.begin(), c1.end());
+                lits.insert(c2.begin(), c2.end());
+                Clause res(lits.begin(), lits.end());
+                resolvents.push_back(res);
             }
         }
+
+        cnf = others;
+        cnf.insert(cnf.end(), resolvents.begin(), resolvents.end());
+        if (contains_empty_clause(cnf)) return false;
     }
     return true;
 }
 
-// DP solver (eliminates variables)
-bool dp_solver(ClauseSet clauses, double &solving_time_ms) {
-    auto start = Clock::now();
+int main() {
+    string folder = "../../cnf_files/";
+    ofstream out("results_dp.txt");
+    out << fixed << setprecision(3);
 
-    if (!unit_propagate(clauses)) {
-        solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
-        return false;
-    }
-
-    while (!clauses.empty()) {
-        // Select the first literal from the first clause
-        int chosen_var = *clauses.begin()->begin();
-
-        ClauseSet pos, neg, rest;
-        for (const auto &clause : clauses) {
-            if (clause.count(chosen_var)) pos.insert(clause);
-            else if (clause.count(-chosen_var)) neg.insert(clause);
-            else rest.insert(clause);
-        }
-
-        ClauseSet resolvents;
-        for (const auto &c1 : pos) {
-            for (const auto &c2 : neg) {
-                Clause resolvent;
-                for (int l : c1) if (l != chosen_var) resolvent.insert(l);
-                for (int l : c2) if (l != -chosen_var) resolvent.insert(l);
-                if (resolvent.empty()) {
-                    solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
-                    return false;
-                }
-                resolvents.insert(resolvent);
-            }
-        }
-
-        clauses = rest;
-        clauses.insert(resolvents.begin(), resolvents.end());
-
-        if (!unit_propagate(clauses)) {
-            solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
-            return false;
-        }
-    }
-
-    solving_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
-    return true;
-}
-
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: ./sat_solver <file.cnf>\n";
+    if (!fs::exists(folder) || !fs::is_directory(folder)) {
+        cerr << "Error: directory not found: " << folder << "\n";
         return 1;
     }
 
-    auto total_start = Clock::now();
+    for (const auto &entry : fs::directory_iterator(folder)) {
+        if (entry.path().extension() == ".cnf") {
+            string file = entry.path().string();
+            string name = entry.path().filename().string();
 
-    auto parse_start = Clock::now();
-    ClauseSet clauses = parse_dimacs(argv[1]);
-    auto parse_end = Clock::now();
-    double parsing_time = std::chrono::duration<double, std::milli>(parse_end - parse_start).count();
+            int num_vars;
+            CNF cnf = parse_cnf(file, num_vars);
 
-    double solving_time = 0;
-    bool result = dp_solver(clauses, solving_time);
+            auto start = chrono::high_resolution_clock::now();
+            bool sat = dp_algorithm(cnf, num_vars);
+            auto end = chrono::high_resolution_clock::now();
 
-    auto total_end = Clock::now();
-    double total_time = std::chrono::duration<double, std::milli>(total_end - total_start).count();
+            double ms = chrono::duration<double, milli>(end - start).count();
+            out << name << ": " << (sat ? "SAT" : "UNSAT") << " in " << ms << " ms\n";
+            cout << name << ": " << (sat ? "SAT" : "UNSAT") << " in " << ms << " ms\n";
+        }
+    }
 
-    std::cout << std::fixed << std::setprecision(3);
-    std::cout << "Result: " << (result ? "SAT" : "UNSAT") << "\n";
-    std::cout << "Timing Breakdown:\n";
-    std::cout << "  Parsing Time: " << parsing_time << " ms\n";
-    std::cout << "  Solving Time: " << solving_time << " ms\n";
-    std::cout << "  Total Time:   " << total_time << " ms\n";
-
+    out.close();
+    cout << "Results written to results_dp.txt\n";
     return 0;
 }

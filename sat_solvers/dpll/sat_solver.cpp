@@ -7,13 +7,14 @@
 #include <chrono>
 #include <iomanip>
 #include <algorithm>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 using Clause = std::vector<int>;
 using CNF = std::vector<Clause>;
 using Assignment = std::map<int, bool>;
-
 using Clock = std::chrono::high_resolution_clock;
-
 
 CNF parse_cnf(const std::string& filename, int &num_vars) {
     std::ifstream file(filename);
@@ -41,7 +42,6 @@ CNF parse_cnf(const std::string& filename, int &num_vars) {
     return formula;
 }
 
-
 CNF simplify(const CNF &cnf, int var, bool value) {
     CNF new_cnf;
     for (const auto &clause : cnf) {
@@ -66,7 +66,6 @@ CNF simplify(const CNF &cnf, int var, bool value) {
     }
     return new_cnf;
 }
-
 
 bool unit_propagate(CNF &cnf, Assignment &assignment) {
     bool changed = true;
@@ -93,7 +92,6 @@ bool unit_propagate(CNF &cnf, Assignment &assignment) {
     return true;
 }
 
-
 void pure_literal_elimination(CNF &cnf, Assignment &assignment) {
     std::map<int, int> count;
     for (const auto &clause : cnf) {
@@ -111,7 +109,6 @@ void pure_literal_elimination(CNF &cnf, Assignment &assignment) {
         }
     }
 }
-
 
 bool dpll(CNF cnf, Assignment &assignment) {
     if (!unit_propagate(cnf, assignment)) return false;
@@ -150,31 +147,31 @@ bool dpll(CNF cnf, Assignment &assignment) {
     return false;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: ./sat_solver <file.cnf>\n";
-        return 1;
+int main() {
+    std::string folder = "../../cnf_files/";
+    std::ofstream out("results.txt");
+    out << std::fixed << std::setprecision(3);
+
+    for (const auto &entry : fs::directory_iterator(folder)) {
+        if (entry.path().extension() == ".cnf") {
+            std::string file = entry.path().string();
+            std::string name = entry.path().filename().string();
+
+            int num_vars;
+            CNF cnf = parse_cnf(file, num_vars);
+            Assignment assignment;
+
+            auto start = Clock::now();
+            bool sat = dpll(cnf, assignment);
+            auto end = Clock::now();
+
+            double ms = std::chrono::duration<double, std::milli>(end - start).count();
+            out << name << ": " << (sat ? "SAT" : "UNSAT") << " in " << ms << " ms\n";
+            std::cout << name << ": " << (sat ? "SAT" : "UNSAT") << " in " << ms << " ms\n";
+        }
     }
 
-    auto total_start = Clock::now();
-    int num_vars;
-    auto parse_start = Clock::now();
-    CNF cnf = parse_cnf(argv[1], num_vars);
-    auto parse_end = Clock::now();
-
-    auto solve_start = Clock::now();
-    Assignment assignment;
-    bool sat = dpll(cnf, assignment);
-    auto solve_end = Clock::now();
-    auto total_end = Clock::now();
-
-    std::cout << std::fixed << std::setprecision(3);
-    std::cout << "Result: " << (sat ? "SAT" : "UNSAT") << "\n";
-
-    std::cout << "Timing Breakdown:\n";
-    std::cout << "  Parsing Time: " << std::chrono::duration<double, std::milli>(parse_end - parse_start).count() << " ms\n";
-    std::cout << "  Solving Time: " << std::chrono::duration<double, std::milli>(solve_end - solve_start).count() << " ms\n";
-    std::cout << "  Total Time:   " << std::chrono::duration<double, std::milli>(total_end - total_start).count() << " ms\n";
-
+    out.close();
+    std::cout << "Results written to results.txt\n";
     return 0;
 }
