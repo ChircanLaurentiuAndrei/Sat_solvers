@@ -81,7 +81,7 @@ bool dp_algorithm(CNF cnf, int num_vars) {
 }
 
 int main() {
-    string folder = "../../cnf_files/";
+    string folder = "../../cnf_files/resolution_cnfs/";
     ofstream out("results_dp.txt");
     out << fixed << setprecision(3);
 

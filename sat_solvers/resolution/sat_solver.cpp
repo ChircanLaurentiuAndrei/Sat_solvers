@@ -72,7 +72,7 @@ bool resolution_algorithm(CNF formula) {
 }
 
 int main() {
-    string folder = "../../cnf_files/";
+    string folder = "../../cnf_files/resolution_cnfs/";
     ofstream out("results_resolution.txt");
     out << fixed << setprecision(3);
 

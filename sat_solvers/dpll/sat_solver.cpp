@@ -148,7 +148,7 @@ bool dpll(CNF cnf, Assignment &assignment) {
 }
 
 int main() {
-    std::string folder = "../../cnf_files/";
+    std::string folder = "../../cnf_files/resolution_cnfs/";
     std::ofstream out("results.txt");
     out << std::fixed << std::setprecision(3);
 
