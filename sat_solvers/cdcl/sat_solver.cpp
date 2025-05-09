@@ -273,7 +273,7 @@
  
 
  int main() {
-    std::string folder = "../../cnf_files/cnfs/";
+    std::string folder = "../../cnf_files/2sat_cnf/";
     std::ofstream out("results.txt");
     out << std::fixed << std::setprecision(3);
 
