@@ -1,9 +1,3 @@
-/*
- * Program to implement a SAT solver based on Conflict Driven Clause Learning
- * with non-chronological backtracking Sukrut Rao CS15BTECH11036
- * Modified for batch CNF solving and timing log output
- */
-
  #include <algorithm>
  #include <cmath>
  #include <iostream>
@@ -246,6 +240,7 @@
        too_many_attempts = true;
      }
    } while (too_many_attempts);
+   return 1;
  }
  
  bool SATSolverCDCL::all_variables_assigned() {
@@ -276,10 +271,9 @@
    return CDCL();
  }
  
- // Batch-processing main
 
  int main() {
-    std::string folder = "../../cnf_files/cdcl_cnfs/";
+    std::string folder = "../../cnf_files/cnfs/";
     std::ofstream out("results.txt");
     out << std::fixed << std::setprecision(3);
 
@@ -294,7 +288,6 @@
                 continue;
             }
 
-            // Redirect cin to read from file
             std::streambuf *orig_cin = std::cin.rdbuf();
             std::cin.rdbuf(cnf_input.rdbuf());
 
@@ -310,8 +303,6 @@
             std::string outcome = (result == RetVal::r_satisfied ? "SAT" : "UNSAT");
             out << name << ": " << outcome << " in " << ms << " ms\n";
             std::cout << name << ": " << outcome << " in " << ms << " ms\n";
-
-            // Restore original cin
             std::cin.rdbuf(orig_cin);
         }
     }
