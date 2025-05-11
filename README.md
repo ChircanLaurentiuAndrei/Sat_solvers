@@ -38,9 +38,9 @@ Additionally, there is a short [Python script](cnf_generator/) that can generate
 
 ## ToDO list
 
-~~1. Actually implement the algorithims.~~
-~~2. Investigate the use of multithreading and other optimizations.~~ _Multithreading usually slows things down_
-~~3. Find a way to store benchmarks.~~
+1. ~~Actually implement the algorithims.~~
+2. ~~Investigate the use of multithreading and other optimizations.~~ _Multithreading usually slows things down_
+3. ~~Find a way to store benchmarks.~~
 4. Maybe write a script to streamline everything and make testing easier. _This is still a valid goal, but not right now._
 5. Allow users to choose the folder from which CNF files are read.
 6. Unify all the code into one program with an option to select a preferred method.
