@@ -148,8 +148,8 @@ bool dpll(CNF cnf, Assignment &assignment) {
 }
 
 int main() {
-    std::string folder = "../../cnf_files/resolution_cnfs/";
-    std::ofstream out("results.txt");
+    std::string folder = "../../cnf_files/samples/";
+    std::ofstream out("results_DPLL.txt");
     out << std::fixed << std::setprecision(3);
 
     for (const auto &entry : fs::directory_iterator(folder)) {

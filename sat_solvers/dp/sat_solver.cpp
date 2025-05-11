@@ -126,7 +126,7 @@ bool davis_putnam(CNF cnf, unordered_set<int> &assignments) {
 }
 
 int main() {
-    string folder = "../../cnf_files/2sat_cnf/";
+    string folder = "../../cnf_files/samples/";
     ofstream out("results_davis_putnam.txt");
     out << fixed << setprecision(3);
 

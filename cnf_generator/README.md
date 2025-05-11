@@ -1,13 +1,37 @@
 # CNF Generator
 
-- This python script generates CNF files just so i don't have to search for them on the internet.
-- _Apperently there is a library for everything._
+A Python script to generate random CNF (Conjunctive Normal Form) formulas in DIMACS format, commonly used for SAT solvers.
 
-# How to use
+## Features
 
-- Just open a terminal and type `python3 generate_random_cnf.py --vars {number_of_var} --clauses {number_of_clauses} --lits {number_of_lit_in_clauses} --out {name}.cnf`
-- After running in the script it should output a cnf file with the generated thing.
+- Generates CNF formulas with customizable variables, clauses, and literals per clause.
+- Outputs files in standard DIMACS format.
 
-# ToDo
+## Usage
 
-- maybe it should say if the thing is sat or not ig
+Run the script with customizable parameters:
+
+```bash
+python3 generate_random_cnf.py --vars 30 --clauses 30 --lits 30 --out random.cnf
+```
+
+### Arguments:
+- `--vars`: Number of variables (default: 30)
+- `--clauses`: Number of clauses (default: 30)
+- `--lits`: Literals per clause (default: 3)
+- `--out`: Output CNF file (default: `random.cnf`)
+
+## Example Output
+
+Sample CNF file generated:
+
+```dimacs
+p cnf 30 30
+1 -3 7 0
+-2 4 -9 0
+...
+```
+
+## License
+
+[MIT License](LICENSE)
