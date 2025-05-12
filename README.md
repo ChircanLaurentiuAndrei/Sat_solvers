@@ -1,21 +1,24 @@
 # Naive SAT Solvers
-This repository includes the implementation of __Resolution method, DP, DPLL, CDCL__ , four of the most well-known [SAT solving methods](http://en.wikipedia.org/wiki/Boolean_satisfiability_problem#Algorithms_for_solving_SAT)  in their **basic** form. Each implementation has its own code base, but they share the same fundamental ideas. A console executable reads all the [CNF](http://en.wikipedia.org/wiki/Conjunctive_normal_form) files in [DIMACS](https://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html) format from a folder, processes them, and outputs the result in a `.txt` file with the format `<flename>: SAT/UNSAT in x.xxx ms`.
+This repository includes implementations of the __Resolution Method, Davis–Putnam (DP), DPLL, and CDCL__— four of the most well-known [SAT solving methods](http://en.wikipedia.org/wiki/Boolean_satisfiability_problem#Algorithms_for_solving_SAT)—in their **basic** form.
+Each implementation has its own codebase but shares the same fundamental ideas. A console executable reads all [CNF](http://en.wikipedia.org/wiki/Conjunctive_normal_form) files in [DIMACS](https://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html) format from a folder, processes them, and outputs the results in a `.txt` file with the format `<flename>: SAT/UNSAT in x.xxx ms`.
 ## Motivation
 
-This repository aims to benchmark popular SAT solving methods/algorithms for the purpose of ***science*** ~~(but also to complete an assigment for university)~~.
-The main algorithms I will be tackling are Resolution, DP, DPLL, and CDCL, _and maybe some more if i have the time_.
-All the algorithms are implemented without heuristics or other complex optimizations to prioritize simplicity and ease of use. This journey has led me down a path of knowledge and made me appreciate all the work that has been dedicated to the problem of satisfiability and state-of-the-art solvers. I have great respect for the people who made all this possible. I hope my work inspires others to look at this problem with the same enthusiasm as I do.
+This repository aims to benchmark popular SAT solving methods/algorithms for the purpose of ***science*** ~~(but also to complete an assignment for university)~~.
+The main algorithms tackled are Resolution, DP, DPLL, and CDCL—_and maybe more if I have the time_.
+All algorithms are implemented without heuristics or complex optimizations to prioritize **simplicity and ease of use**.
+This journey has led me down a path of discovery and made me appreciate the immense work behind the problem of satisfiability and modern SAT solvers. I have great respect for the people who made all this possible, and I hope this project inspires others to approach the problem with the same enthusiasm.
 
 ## C++11?
 
-The main algorithms have been implemented entirely in C11 for efficiency and simplicity. C11 provides all the necessary libraries to make this as straightforward as possible.
-My motivation for choosing C++ over Python is its speed and compiled nature.
+All algorithms are implemented entirely in **C++11** for both efficiency and simplicity.
+C++ provides all the necessary libraries to make this as straightforward as possible.
+My motivation for choosing C++ over Python is its **speed** and **compiled nature**.
 **And everybody knows that _speed_ is key.**
 
 ## Usage
 
 We take this simple CNF file as example:
-```
+``` dimacs
 p cnf 5 10
 1 4 -2 0
 3 -1 -2 0
@@ -29,12 +32,19 @@ p cnf 5 10
 4 -3 -2 0
 ```
 
-The first line, `p cnf 5 10` is ignored as it is treated as a comment.
-Running one of the included solvers produces the output file `result_<method_used>.txt`, containing `<filename>.cnf: SAT in 0.069 ms`.
+The first line, `p cnf 5 10` is treated as metadata and ignored.
+Running any of the included solvers produces an output file named `result_<method_used>.txt`, containing lines like: `<filename>.cnf: SAT in 0.069 ms`.
 
-The repository contains the [CNF_files](cnf_files/) directory, where all the test cases are stored, as well as the [samples](cnf_files/samples/) directory, where I left some trivial CNF files. The sample files can be removed, and the programs will accept any CNF file placed in the `samples` folder. Simply drag and drop the files there and enjoy the results!
+The repository contains the [CNF_files](cnf_files/) directory, where all test cases are stored, and a [samples](cnf_files/samples/) directory with a few trivial CNF examples.
+You can remove or replace the sample files—just drag and drop any CNF files you want to test into the `samples` folder, and enjoy the results!
 
-Additionally, there is a short [Python script](cnf_generator/) that can generate CNF files in DIMACS format.
+Additionally, there's a simple [Python script](cnf_generator/) that can generate CNF files in DIMACS format.
+
+## Test results
+
+In the [results](results/) directory, you can find all test case outputs, split into **2SAT** and **3SAT**.
+You'll notice the **lack of results** for the Resolution method and Davis–Putnam. That's because those methods are **way too slow** for anything non-trivial in the 3SAT category.
+All results follow the format described in the first section of this [README.md](README.md).
 
 ## ToDO list
 
